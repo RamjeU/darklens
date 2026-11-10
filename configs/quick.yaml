@@ -1,0 +1,9 @@
+# Short smoke-test run (~15-30 min on an M2). It checks the whole pipeline end to end.
+# The macro-model posteriors become sharp quickly; the dark-matter posteriors need
+# the full run (configs/default.yaml).
+train:
+  steps: 3000
+  batch_size: 32
+  warmup: 200
+  eval_every: 250
+  n_val: 512

@@ -1,0 +1,38 @@
+# Full training run. On an Apple M2 (MPS backend) expect a few hours; watch the ETA
+# printed in the log. Training is resumable with --resume.
+sim:
+  npix: 64
+  pixel_scale: 0.065      # arcsec/pixel
+  supersample: 2
+  psf_fwhm: 0.08          # arcsec
+  z_lens: 0.5
+  z_source: 2.0
+  sky_sigma: 1.0
+  gain: 4.0
+  max_clumps: 2
+  m_min: 1.0e+7
+  m_max: 1.0e+10
+  mf_slope: -1.9
+  R_render: 2.0
+  dm_prior:
+    f_sub: [0.0, 0.05]
+    log10_mhm: [6.0, 10.0]
+
+model:
+  embed_dim: 256
+  flow_layers_dm: 6
+  flow_layers_macro: 8
+  flow_hidden: 128
+  n_bins: 8
+  encoder_widths: [32, 64, 128, 256]
+
+train:
+  steps: 30000
+  batch_size: 64
+  lr: 5.0e-4
+  weight_decay: 1.0e-4
+  warmup: 1000
+  grad_clip: 5.0
+  eval_every: 500
+  n_val: 1024
+  seed: 0

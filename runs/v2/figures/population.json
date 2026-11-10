@@ -1,0 +1,18 @@
+{
+  "cdm": {
+    "true_log10_mhm": 6.5,
+    "n_lenses": 100,
+    "mean_kl_per_lens": 0.04879546781567993,
+    "log10_mhm_95_upper": 9.474104588258056,
+    "m_wdm_95_lower_keV": 1.7499891846750104,
+    "log10_mhm_map": 6.02
+  },
+  "wdm": {
+    "true_log10_mhm": 9.0,
+    "n_lenses": 100,
+    "mean_kl_per_lens": 0.04162991840122594,
+    "log10_mhm_95_upper": 9.638309046552942,
+    "m_wdm_95_lower_keV": 1.5621571341502754,
+    "log10_mhm_map": 6.02
+  }
+}

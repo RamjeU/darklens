@@ -1,0 +1,25 @@
+[build-system]
+requires = ["setuptools>=64"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "darklens"
+version = "0.1.0"
+description = "Simulation-based inference of dark-matter substructure and warm dark matter from strong gravitational lenses"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [{ name = "Ram Uthayakumaar" }]
+dependencies = ["torch>=2.1", "numpy>=1.24", "matplotlib>=3.7", "pyyaml>=6.0"]
+
+[project.optional-dependencies]
+dev = ["pytest>=7.0"]
+
+[project.scripts]
+darklens = "darklens.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["darklens*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

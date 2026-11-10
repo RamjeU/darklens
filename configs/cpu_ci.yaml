@@ -1,0 +1,12 @@
+# Used to validate the code on a 2-core CPU machine. Smaller network, fewer steps.
+model:
+  embed_dim: 128
+  flow_hidden: 96
+  encoder_widths: [16, 32, 64, 128]
+train:
+  steps: 2000
+  batch_size: 32
+  lr: 7.0e-4
+  warmup: 150
+  eval_every: 200
+  n_val: 384
