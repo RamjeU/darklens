@@ -47,7 +47,7 @@ flowchart LR
 | WDM suppression | n_WDM/n_CDM = [1 + (4.2 M_hm/m)^2.5]^−0.2 | [Lovell 2020](https://arxiv.org/abs/2003.01125) |
 | M_hm ↔ m_WDM | Half-mode wavelength of the thermal-relic transfer function | [Viel et al. 2005](https://arxiv.org/abs/astro-ph/0501562); [Schneider et al. 2012](https://arxiv.org/abs/1112.0330) |
 | Source | Elliptical Sérsic plus up to two compact star-forming clumps | [Ciotti & Bertin 1999](https://arxiv.org/abs/astro-ph/9911078) for b_n |
-| Cosmology | Flat ΛCDM, Planck 2018 (H₀ = 67.4, Ω_m = 0.315), z_l = 0.5, z_s = 2 | — |
+| Cosmology | Flat ΛCDM, Planck 2018 (H₀ = 67.4, Ω_m = 0.315), z_l = 0.5, z_s = 2 | [Planck Collaboration 2020](https://arxiv.org/abs/1807.06209) |
 | Instrument | 64×64 pixels at 0.065″, 2× supersampling, Gaussian PSF with 0.08″ FWHM, sky plus Poisson noise | HST-WFC3-like |
 
 The lens equation **β = θ − α(θ)** is evaluated on a supersampled grid. The deflections of up to several hundred subhalos per image are summed in a packed, chunked kernel (`simulator.py`), so the cost scales with the actual number of subhalos rather than the padded maximum. Every operation is a PyTorch op, so the simulator is **differentiable** end to end. The tests check this, and `evaluate` uses it to compute saliency maps.
@@ -198,12 +198,24 @@ The physics is verified against identities rather than against itself:
 * **Priors.** The prior bijection's Jacobian matches autograd.
 * **Simulator.** Gradients flow from pixels to the lens parameters.
 
+## Prior work and attribution
+
+**The idea is not new, and this repository does not claim it is.** Neural inference of subhalo populations from strong-lens images was developed by [Brehmer et al. (2019)](https://arxiv.org/abs/1909.02005), [Wagner-Carena et al. (2021](https://arxiv.org/abs/2010.13787), [2023)](https://arxiv.org/abs/2203.00690) and [Anau Montel et al. (2023)](https://arxiv.org/abs/2205.09126), among others. DarkLens is an independent, from-scratch implementation of that approach, written to learn and demonstrate the method end to end. Every physical formula and statistical test is taken from the paper cited next to it in the tables above and in the code docstrings.
+
+**No code was copied from other projects.** The parts that most closely follow a published reference are:
+
+* **`flows.py`**, the rational-quadratic spline. It implements the equations of [Durkan et al. (2019)](https://arxiv.org/abs/1906.04032) and follows the conventions of the authors' reference library [`nflows`](https://github.com/bayesiains/nflows) (MIT licence): minimum bin widths and heights, and boundary derivatives fixed to 1 to join the identity tails.
+* **`calibration.py`**, the TARP test. It implements the algorithm of [Lemos et al. (2023)](https://arxiv.org/abs/2302.03026).
+* **`population.py`**, the hierarchical reweighting. It follows the formulation of [Wagner-Carena et al. (2021)](https://arxiv.org/abs/2010.13787).
+
+**Related open-source tools.** These are established, more complete packages for the same kind of work: [`lenstronomy`](https://github.com/lenstronomy/lenstronomy) (lens modelling), [`paltas`](https://github.com/swagnercarena/paltas) (substructure simulation and inference), [`caustics`](https://github.com/Ciela-Institute/caustics) (differentiable lensing in PyTorch), [`swyft`](https://github.com/undark-lab/swyft) (truncated marginal neural ratio estimation) and [`sbi`](https://github.com/sbi-dev/sbi) (simulation-based inference). DarkLens deliberately depends on none of them, so that every component is visible and tested in this repository.
+
 ## Limitations and next steps
 
 This is a research-grade pipeline on simulated data, and its scope is deliberately stated:
 
 * **Simulated data only.** Applying it to real HST, JWST or Euclid lenses would also require modelling the lens galaxy's light, realistic PSFs and noise, and data-driven source priors.
-* **No line-of-sight halos.** Halos along the line of sight carry much of the real signal ([Despali et al. 2018](https://arxiv.org/abs/1710.05029); [Sengül et al. 2022](https://arxiv.org/abs/2112.00749)). They are the next ingredient to add, and they slot into `deflection()` with multi-plane ray tracing.
+* **No line-of-sight halos.** Halos along the line of sight carry much of the real signal ([Despali et al. 2018](https://arxiv.org/abs/1710.05029)). They are the next ingredient to add, and they slot into `deflection()` with multi-plane ray tracing.
 * **Simple subhalo profile.** Pseudo-Jaffe subhalos are a standard simplification. Truncated NFW profiles with a WDM mass–concentration relation would make the inference more sensitive.
 * **Fixed redshifts.** A single (z_l, z_s) pair; sampling the redshifts would generalise it.
 * **Hierarchical products amplify estimator error.** Multiplying many posterior ratios can turn small miscalibration into bias. That is why the calibration tests come first, and why ensembles or sequential and truncated NPE ([Miller et al. 2021](https://arxiv.org/abs/2107.01214)) are natural extensions.
@@ -220,7 +232,9 @@ Hermans, J. et al. (2022). A trust crisis in simulation-based inference? *TMLR*.
 Keeton, C. (2001). A catalog of mass models for gravitational lensing. arXiv:astro-ph/0102341.
 Lemos, P., Coogan, A., Hezaveh, Y. & Perreault-Levasseur, L. (2023). Sampling-based accuracy testing of posterior estimators for general inference. *ICML*.
 Lovell, M. (2020). Toward a general parameterization of the warm dark matter halo mass function. *ApJ* 897, 147.
+Metcalf, R. B. & Madau, P. (2001). Compound gravitational lensing as a probe of dark matter substructure within galaxy halos. *ApJ* 563, 9.
 Papamakarios, G. & Murray, I. (2016). Fast ε-free inference of simulation models with Bayesian conditional density estimation. *NeurIPS*.
+Planck Collaboration (2020). Planck 2018 results. VI. Cosmological parameters. *A&A* 641, A6.
 Schneider, A., Smith, R. E., Macciò, A. V. & Moore, B. (2012). Non-linear evolution of cosmological structures in warm dark matter models. *MNRAS* 424, 684.
 Talts, S. et al. (2018). Validating Bayesian inference algorithms with simulation-based calibration. arXiv:1804.06788.
 Vegetti, S. et al. (2012). Gravitational detection of a low-mass dark satellite galaxy at cosmological distance. *Nature* 481, 341.

@@ -8,6 +8,11 @@ MLP that sees the unchanged half and the context vector (the image embedding).
 Outside ``[-tail_bound, tail_bound]`` the transform is the identity, so it is a
 bijection on all of R.
 
+The spline follows the equations of Durkan et al. (2019) and the conventions of the
+authors' MIT-licensed reference library ``nflows`` (github.com/bayesiains/nflows):
+minimum bin sizes, and boundary derivatives padded so the slope is exactly 1 where
+the spline meets the identity tails. The code here was written independently.
+
 Direction convention: ``forward`` maps data z -> base noise u. It is used for
 density evaluation, which is what training needs.
 """
