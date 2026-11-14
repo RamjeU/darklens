@@ -90,48 +90,47 @@ This reweights each amortised posterior from the interim training prior π to th
 
 Each panel is a fresh draw from the training prior. The panels show different Einstein radii, ellipticities and shears, extended and clumpy sources, and between zero and several hundred subhalos.
 
-### Main run (`configs/v2.yaml`): 24,000 steps × 64 ≈ 1.5 M simulations, 5.4 h on an Apple M2
+### Main run (`configs/v3.yaml`): JWST-like imaging, 24,000 steps × 64 ≈ 1.5 M simulations, ~8 h on an Apple M2
 
-All numbers come from `figures/v2/metrics.json` and `figures/v2/population.json`, computed on 500 fresh test lenses (and two 100-lens mock surveys) that the network never saw. A first run with the original settings is documented under *Training notes*.
+v3 simulates sharper, deeper imaging than the earlier HST-like runs: 0.04″ pixels, a 0.055″ PSF and bright arcs. That roughly triples the subhalo signal relative to the noise (measured directly on noise-free image pairs), and it is what finally made the dark-matter head learn: its validation NLL ended 0.199 nats below the image-blind baseline, against 0.053 for the HST-like v2 run (see *Training notes*). All numbers below come from `figures/v3/metrics.json` and `figures/v3/population.json`, computed on 500 fresh test lenses and two 100-lens mock surveys the network never saw.
 
 | Parameter | Posterior RMSE | Mean 68% width | Contraction vs prior | 68% coverage |
 |---|---|---|---|---|
-| θ_E (″) | 0.0096 | 0.017 | **0.997** | 0.71 |
-| e₁ | 0.012 | 0.023 | 0.992 | 0.75 |
-| e₂ | 0.013 | 0.024 | 0.991 | 0.73 |
-| γ₁ | 0.0053 | 0.012 | 0.981 | 0.77 |
-| γ₂ | 0.0056 | 0.012 | 0.980 | 0.75 |
-| x_L (″) | 0.0055 | 0.011 | 0.981 | 0.77 |
-| y_L (″) | 0.0057 | 0.011 | 0.981 | 0.75 |
-| f_sub | 0.014 | 0.031 | **0.094** | 0.63 |
-| log₁₀ M_hm | 1.13 | 2.68 | **0.018** | 0.68 |
+| θ_E (″) | 0.0077 | 0.014 | **0.997** | 0.72 |
+| e₁ | 0.0098 | 0.019 | 0.995 | 0.70 |
+| e₂ | 0.010 | 0.020 | 0.994 | 0.73 |
+| γ₁ | 0.0049 | 0.010 | 0.986 | 0.74 |
+| γ₂ | 0.0051 | 0.010 | 0.985 | 0.77 |
+| x_L (″) | 0.0051 | 0.010 | 0.986 | 0.75 |
+| y_L (″) | 0.0047 | 0.010 | 0.986 | 0.73 |
+| f_sub | 0.0124 | 0.028 | **0.234** | 0.68 |
+| log₁₀ M_hm | 1.10 | 2.53 | **0.093** | 0.66 |
 
-*Contraction* is 1 − (posterior variance ÷ prior variance). A value of 1 means the image pins the parameter exactly, and 0 means the image adds nothing to the prior.
+*Contraction* is 1 − (posterior variance ÷ prior variance): 1 means the image pins the parameter exactly, 0 means the image adds nothing to the prior.
 
 **What works.**
 
-* **The macro-model is recovered to about 1% of the Einstein radius**, with 98–99.7% contraction on every parameter. The ellipticity–shear degeneracy is learned without supervision. The macro posteriors are slightly *conservative* (68% intervals cover 71–77% of the truths). That is the safe direction to err in.
-* **The dark-matter posteriors are calibrated.** TARP mean deviation is 0.014 for the dark-matter head and 0.031 for the macro head, and the dark-matter HPD coverage curve lies on the diagonal. The model never claims knowledge it does not have.
-* **The network attends to the arcs.** The saliency map of the dark-matter posterior is concentrated on the Einstein ring, where subhalos perturb the lensed light, and is near zero elsewhere.
+* **A real, calibrated per-lens measurement of substructure.** The f_sub posterior contracts by 23% per image (up from 9% in v2), its means track the truth in the recovery plot, and its 68% intervals cover the truth 68.2% of the time. M_hm contracts by 9%, its first nonzero value in any run.
+* **The dark-matter posteriors are almost perfectly calibrated.** TARP mean deviation 0.006 (macro head: 0.031), and the dark-matter HPD coverage curve lies on the diagonal. Sharper *and* still honest.
+* **The macro-model improves across the board**: ~0.8% error on the Einstein radius, 98.5–99.7% contraction, slightly conservative intervals.
+* **The network attends to the arcs**, as the saliency map shows.
 
-**What does not work yet, stated plainly.**
+**What still fails, stated plainly: the 100-lens combination.**
 
-* **The substructure signal per lens is weak.** The dark-matter head beats the image-blind baseline by 0.053 nats. Each image tightens f_sub by about 9%, and log₁₀ M_hm by under 2%, which is effectively nothing. Its posterior mean for M_hm stays near the prior centre whatever the truth. This is consistent with the literature: per-lens WDM information at HST-like resolution is small, and published constraints come from many lenses, higher resolution, or flux ratios ([Gilman et al. 2020](https://arxiv.org/abs/1908.06983); [Anau Montel et al. 2023](https://arxiv.org/abs/2205.09126)).
-* **The population inference is biased, so no particle-mass limit is claimed.** Combining 100 lenses moves the M_hm posterior to about 9.2–9.5 *in both mock surveys*. That happens whether the truth is 6.5 (CDM-like) or 9.0 (WDM), and there is also a spike at the lower prior edge. The per-lens information is tiny, and the product over 100 lenses amplifies small systematic errors in the flow density until they dominate. That is exactly the failure mode the code warns about, and the warning fired on this run (mean per-lens KL ≈ 0.04–0.05 nats). The printed "m_WDM > 1.6–1.7 keV" figures are therefore **not** reported as results.
+The hierarchical product remains unusable, and in v3 its failure mode is worse than v2's. Both mock surveys collapse onto a spike at the *lower edge* of the M_hm grid, and the warm-dark-matter survey (true log₁₀ M_hm = 9.0) ends with a 95% upper limit of 8.2 — it **excludes its own truth** and would report "m_WDM > 4.2 keV" about a sky that genuinely has warm dark matter. A confidently wrong limit is worse than no limit, so no particle-mass constraint is claimed. The mechanism: the per-lens posteriors are calibrated *on average* (that is what TARP tests), but multiplying 100 of them amplifies small *shared* errors in the flow's density shape — here at the prior edge, where the logit transform stretches space — until they dominate the product. Population-level inference needs population-level validation, which single-lens calibration cannot substitute for ([Hermans et al. 2022](https://arxiv.org/abs/2110.06581)).
 
-![Calibration](figures/v2/calibration.png)
-![Macro-model recovery](figures/v2/recovery_macro.png)
-![Dark-matter recovery: f_sub weakly informed, M_hm uninformed](figures/v2/recovery_dm.png)
-![Saliency of the dark-matter posterior](figures/v2/saliency.png)
-![Population inference on a CDM-like survey: biased toward high M_hm](figures/v2/population_cdm.png)
+![Calibration](figures/v3/calibration.png)
+![Dark-matter recovery: f_sub now tracks the truth](figures/v3/recovery_dm.png)
+![Macro-model recovery](figures/v3/recovery_macro.png)
+![Population inference on the WDM survey: the product collapses to the grid edge and excludes the truth](figures/v3/population_wdm.png)
 
-**What would fix it,** in order of expected impact:
+**What would fix the population step**, in order of expected impact:
 
-1. **Higher resolution and S/N.** Make the pixels finer (0.03–0.04″) or simulate ELT/JWST-like imaging. Perturbations from 10⁷–10⁸ M☉ subhalos are smaller than the current pixels.
-2. **Much longer training, or a dark-matter-only network.** The dark-matter loss was still falling when the learning rate decayed.
-3. **Robust population inference.** Use an ensemble of flows or truncated, sequential NPE ([Miller et al. 2021](https://arxiv.org/abs/2107.01214)), and check calibration *at the population level* before trusting a product over lenses.
+1. **An ensemble of independently trained flows**, averaging their densities, so that shared single-model shape errors cancel instead of compounding.
+2. **Population-level calibration tests**: run the full 100-lens pipeline on many mock surveys with known hyper-parameters and check the hyper-posterior's coverage before trusting any limit.
+3. **Edge-aware parameterisation** of M_hm (the suppression saturates below the subhalo mass range, so the likelihood is flat there and the logit-space density is poorly constrained), or truncated sequential NPE ([Miller et al. 2021](https://arxiv.org/abs/2107.01214)).
 
-The earlier pipeline check on a 2-core CPU is kept in `figures/cpu_validation/`.
+The HST-like v2 results and the CPU pipeline check are kept in `figures/v2/` and `figures/cpu_validation/`.
 
 ## Quick start (macOS / Apple silicon, Linux, or Windows)
 
@@ -164,6 +163,8 @@ The device is chosen automatically (CUDA → MPS → CPU). You can override it w
 
 * **The flow's tail bound went from 5 to 10.** Uniform priors become logistic distributions in logit space, which have exponential tails. With the bound at 5, 1.3% of prior mass fell into the Gaussian tails, which added 0.33 nats of irreducible loss and hid the real signal.
 * **`configs/v2.yaml` makes the substructure signal easier to learn.** It removes the source clumps, which mimic subhalo perturbations. It makes the arcs brighter, as in deeper imaging, for about 2.5× the S/N. It also weights the dark-matter loss 3× in the shared encoder. Each head is still minimised by its own true posterior, so the weight changes what the encoder prioritises, not the target.
+
+**Run 2 (`configs/v2.yaml`, HST-like imaging).** With the tail bound fixed, clean bright sources and a 3× dark-matter loss weight, the dark-matter head ended 0.053 nats below the image-blind baseline: learning, but weakly (f_sub contraction 9%, M_hm 2%). The bottleneck was physical, not architectural: at 0.065″ pixels and a 0.08″ PSF, perturbations from 10⁷–10⁸ M☉ subhalos are smaller than a pixel. A direct measurement of the subhalo imprint (χ² between noise-free images with and without substructure) tripled when moving to 0.04″ pixels and a 0.055″ PSF, which became `configs/v3.yaml` and the main run above.
 
 ## Repository layout
 
@@ -209,6 +210,8 @@ The physics is verified against identities rather than against itself:
 * **`population.py`**, the hierarchical reweighting. It follows the formulation of [Wagner-Carena et al. (2021)](https://arxiv.org/abs/2010.13787).
 
 **Related open-source tools.** These are established, more complete packages for the same kind of work: [`lenstronomy`](https://github.com/lenstronomy/lenstronomy) (lens modelling), [`paltas`](https://github.com/swagnercarena/paltas) (substructure simulation and inference), [`caustics`](https://github.com/Ciela-Institute/caustics) (differentiable lensing in PyTorch), [`swyft`](https://github.com/undark-lab/swyft) (truncated marginal neural ratio estimation) and [`sbi`](https://github.com/sbi-dev/sbi) (simulation-based inference). DarkLens deliberately depends on none of them, so that every component is visible and tested in this repository.
+
+**How this was built.** I developed DarkLens with an AI coding assistant (Anthropic's Claude), which wrote much of the code under my direction. I chose the problem, ran the training on my own hardware, read and checked the results, and decided which changes to make between runs. That included diagnosing why the first run's dark-matter head learned nothing, and declining to report the biased population-level limits.
 
 ## Limitations and next steps
 

@@ -1,0 +1,47 @@
+# v3: go after the dark-matter signal itself.
+# Changes vs v2, in order of expected impact (see README, "Training notes"):
+#   1. Sharper imaging: 0.04"/pixel over an 80-pixel field with a 0.055" PSF
+#      (JWST/ELT-like) instead of 0.065"/64px/0.08" (HST-like). Perturbations from
+#      10^7-10^8 Msun subhalos were smaller than a v2 pixel.
+#   2. Same clean sources and bright arcs as v2.
+#   3. dm_weight 3 kept; 24,000 steps (~8-9 h on an M2; --resume works).
+sim:
+  npix: 80
+  pixel_scale: 0.04       # arcsec/pixel
+  supersample: 2
+  psf_fwhm: 0.055         # arcsec
+  z_lens: 0.5
+  z_source: 2.0
+  sky_sigma: 1.0
+  gain: 4.0
+  max_clumps: 0           # no source clumps: they mimic subhalo perturbations
+  m_min: 1.0e+7
+  m_max: 1.0e+10
+  mf_slope: -1.9
+  R_render: 2.0
+  dm_prior:
+    f_sub: [0.0, 0.05]
+    log10_mhm: [6.0, 10.0]
+  nuisance_prior:
+    log10_amp_src: [1.0, 1.8]   # brighter arcs (deeper imaging)
+
+model:
+  embed_dim: 256
+  flow_layers_dm: 6
+  flow_layers_macro: 8
+  flow_hidden: 128
+  n_bins: 8
+  encoder_widths: [32, 64, 128, 256]
+  tail_bound: 10.0
+
+train:
+  steps: 24000
+  batch_size: 64
+  dm_weight: 3.0
+  lr: 5.0e-4
+  weight_decay: 1.0e-4
+  warmup: 1000
+  grad_clip: 5.0
+  eval_every: 500
+  n_val: 1024
+  seed: 0
